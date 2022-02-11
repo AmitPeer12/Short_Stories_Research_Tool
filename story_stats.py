@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
-def show_story_stats(story):
-    with open(story.story_file_path, 'r', encoding='utf-8')  as story_file:
+def extract_stats(file_path):
+    with open(file_path, 'r', encoding='utf-8')  as story_file:
         word_list = {}
         content = story_file.read()
         chars_to_remove = ['\n', '\r', '\t', '\'', '\"', '?', '<', '>', '!', '.', ',', '–', '-', '`']
@@ -11,9 +11,15 @@ def show_story_stats(story):
         for word in content:
             word_list[word] = 1 if word not in word_list else word_list[word] + 1
         
-        word_count = len(content)
-        word_stats = dict(sorted(word_list.items(), key=lambda item: item[1], reverse=True))
-        uniqe_words = len(word_list)
+        word_list["all"] = len(content)
+        return dict(sorted(word_list.items(), key=lambda item: item[1], reverse=True))
+        
+
+def show_story_stats(story):
+
+    word_stats = extract_stats(story.story_file_path)
+    word_count = word_stats.pop("all")
+    uniqe_words = len(word_stats)
     
     count = min(int(input('How many words would you like to study? (up to 100) ')), 100)
 
@@ -24,7 +30,7 @@ def show_story_stats(story):
     height = list(word_stats.values())[:count]
     
     # font size
-    font_size = 14 - round(count / 10)
+    font_size = 14 - round(count / 20)
     # labels for bars
     ticks = []
     for tick in list(word_stats.keys())[:count]:

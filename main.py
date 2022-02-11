@@ -1,15 +1,18 @@
-from persistance_layer import repo, Stories, Authors
-import requests, requests.exceptions, csv
-import pathlib, os, sys, atexit
 from load_legend import legend
+from author_stats import collect_author_stories, show_author_stats
 from story_stats import show_story_stats
+from morph_analysis import morph_analysis
+from persistance_layer import repo, Stories, Authors
+from pathlib import Path
+import requests
+import os, sys, atexit
 
 API_KEY = '84668444eaa4feb6ac59b3522a264275f539f9d6d58dec127a48948c1e8b833c'
 
-STORIES_DIR = fr'{pathlib.Path(__file__).parent.resolve()}/Stories'
-PDF_DIR = fr'{pathlib.Path(__file__).parent.resolve()}/Stories/pdf'
-TXT_DIR = fr'{pathlib.Path(__file__).parent.resolve()}/Stories/text'
-HTML_DIR = fr'{pathlib.Path(__file__).parent.resolve()}/Stories/html'
+STORIES_DIR = Path(__file__).parent / "Stories"
+PDF_DIR = STORIES_DIR / "pdf"
+TXT_DIR = STORIES_DIR / "txt"
+HTML_DIR = STORIES_DIR / "html"
 
 FILE_TYPES = {1: 'TXT', 2: 'HTML', 3: 'PDF'}
 TYPE_FOLDER = {'txt': TXT_DIR, 'html': HTML_DIR, 'pdf': PDF_DIR}
@@ -50,28 +53,28 @@ def get_story(file_type, story_id = None):
 
             if story_id == -1:
                 return None
-
-            if repo.stories.find(id=story_id):
-                return repo.stories.find(id=story_id)
+        
+            if ret_value := repo.stories.find(id=story_id):
+                return ret_value
 
             api_url = f'https://staging.benyehuda.org/api/v1/texts/{story_id}?key={API_KEY}&view=metadata&file_format={file_type}'
 
             if not (response := requests.get(api_url, timeout=6.0)):
-                print('There is no such story, please try again')
-                continue
+                print(f'The story with the I.D {story_id} appears in "Ben Yehuda Project" but cannot be accessed, Please try another story.')
+                return None
                 
             break
 
         story_url = response.json().get('download_url')
         story_name = response.json().get('metadata').get('title')
         #story name can include chars that are invalid for path like "
-        story_file_path = fr'{TYPE_FOLDER.get(file_type)}/{story_name}.{file_type}'
+        story_file_path = TYPE_FOLDER.get(file_type) / f"{story_name}.{file_type}"
         
         if os.path.exists(story_file_path):
             return repo.stories.find(story_name=story_name)
         
         for author_id, author_name in zip(response.json().get('metadata').get('author_ids'), response.json().get('metadata').get('author_string').split('/')):
-            repo.stories.insert(Stories(story_id, story_name, author_id, story_file_path))
+            repo.stories.insert(Stories(story_id, story_name, author_id, str(story_file_path)))
             repo.authors.insert(Authors(author_id, author_name))
 
         story = requests.get(story_url, allow_redirects=True)
@@ -79,7 +82,8 @@ def get_story(file_type, story_id = None):
         with open(story_file_path, 'wb') as story_file:
             story_file.write(story.content)
         
-        return repo.stories.find(story_name=story_name)
+        ret_value = repo.stories.find(story_name=story_name)
+        return ret_value
 
     # Exceptions handling
     except ConnectionError as e:
@@ -126,15 +130,25 @@ def author_stats():
             
         if author_id != None:
             break
-        
+
+    number_of_stories = 0
     for story in legend:
         if int(story[1].split('/')[1][1:]) == author_id:
-            get_story('txt', int(story[0]))              
+            number_of_stories +=1
+            collect_author_stories(get_story('txt', story))
+
+    show_author_stats(repo.authors.find(id=author_id), number_of_stories)
+
+def morphological_analysis():
+    print('\nView the morphological analysis for a single story:\n')
+    if not(story := get_story('txt')):
+        return
+    morph_analysis(story)
 
 def exit():
     sys.exit()
     
-MAIN_MENU_FUNCS = {1: add_stories, 2: story_stats, 3: author_stats, 4: exit}
+MAIN_MENU_FUNCS = {1: add_stories, 2: story_stats, 3: author_stats, 4: morphological_analysis, 5: exit}
 
 def main():
     if not os.path.exists(STORIES_DIR):
