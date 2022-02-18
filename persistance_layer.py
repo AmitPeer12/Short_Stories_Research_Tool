@@ -2,11 +2,12 @@ import sqlite3
 
 # The DTO
 class Stories:
-    def __init__(self, id, story_name, author_id, story_file_path):
+    def __init__(self, id, story_name, author_id, story_file_path, type):
         self.id = id
         self.story_name = story_name
         self.author_id = author_id
         self.story_file_path = story_file_path
+        self.type = type
 
 class Authors:
     def __init__(self, id, name):
@@ -75,6 +76,7 @@ class _Repository:
             story_name      TEXT        NOT NULL,
             author_id       TEXT        NOT NULL,
             story_file_path TEXT        NOT NULL,
+            type            TEXT        NOT NULL,
             FOREIGN KEY(author_id)      REFERENCES authors(id),
             UNIQUE(id)
         );

@@ -1,25 +1,31 @@
-from matplotlib import pyplot as plt
-from story_stats import extract_stats
-import queue
+import matplotlib.pyplot as plt
+from story_stats import extract_stats, generate_colors
 
-myQueue = queue.Queue()
-stats = {}
+stories = []
 
 def collect_author_stories(story):
     if (story == None):
         return
-    myQueue.put(extract_stats(story.story_file_path))
+    stories.append(extract_stats(story.story_file_path))
 
 def show_author_stats(author, number_of_stories):
-    while not myQueue.empty():
-        word_stats = myQueue.get()
+    stats = {}
+    for word_stats in stories:
         word_count = word_stats.pop("all")
         for word in word_stats.keys():
-            stats[word] += word_stats[word] / word_count
+            if word in stats:
+                stats[word] += word_stats[word] / word_count
+            else: stats[word] = word_stats[word] / word_count
+    
+    for word in author.name.split(' '):
+        if word in stats:
+            stats.pop(word)
     
     for word in stats.keys():
         stats[word] /= number_of_stories
+    
     count = min(int(input('How many words would you like to study? (up to 100) ')), 100)
+    stats = dict(sorted(stats.items(), key=lambda item: item[1], reverse=True))
 
     # x-coordinates of left sides of bars
     left = range(count)
@@ -37,7 +43,7 @@ def show_author_stats(author, number_of_stories):
     
     # plotting a bar chart
     plt.bar(left, height,
-            width = 0.8, color = ['red', 'green', 'blue'])
+            width = 0.8, color = generate_colors(count))
     
     # naming the x-axis
     plt.xlabel('most frequant words in the story')

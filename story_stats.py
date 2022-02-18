@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import random as rd
 
 def extract_stats(file_path):
     with open(file_path, 'r', encoding='utf-8')  as story_file:
@@ -39,7 +40,7 @@ def show_story_stats(story):
     
     # plotting a bar chart
     plt.bar(left, height,
-            width = 0.8, color = ['red', 'green', 'blue'])
+            width = 0.8, color = generate_colors(count))
     
     # naming the x-axis
     plt.xlabel('most frequant words in the story')
@@ -58,3 +59,8 @@ def show_story_stats(story):
                 fontsize=font_size)
     # function to show the plot
     plt.show()
+
+def generate_colors(number_of_colors):
+    color = ["#" + ''.join([rd.choice('0123456789ABCDEF') for j in range(6)])
+                 for i in range(number_of_colors)]
+    return color
