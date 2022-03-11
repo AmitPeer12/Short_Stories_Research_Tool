@@ -1,4 +1,4 @@
-# short_stories_research_tool
+# Short Stories Research Tool
 
 ### Research tool for statistical and morphological analysis of short stories in hebrew
 
