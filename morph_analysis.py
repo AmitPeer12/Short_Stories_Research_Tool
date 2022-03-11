@@ -1,5 +1,5 @@
 from operator import concat
-from decode_morph import tostring1
+from decode_morph import decode_morph_tag
 import requests, json, openpyxl
 
 API = 'https://nakdan-4-0.loadbalancer.dicta.org.il/addnikud'
@@ -29,9 +29,11 @@ def add_top_to_sheet(sheet):
     sheet["G1"] = "Gender"
     sheet["H1"] = "Number"
     sheet["I1"] = "Person"
-
-def parse_morph(morph_tag):
-    return []
+    sheet["J1"] = "Status"
+    sheet["K1"] = "Tense"
+    sheet["L1"] = "Polarity"
+    sheet["M1"] = "Binyan"
+    sheet["N1"] = "Suffix"
 
 def reorganize_row(row):
     new_row = []
@@ -39,15 +41,10 @@ def reorganize_row(row):
     new_row.append(row["sep"])
     options = row["options"]
     if len(options) > 0:
-        y = {}
-        for inner in options:
-            y['morph'] = '0x{0:{1}X}'.format(int(inner["morph"]), 16)
-        print(y)
-        #options = options[0]
-        #new_row.append(options["w"])
-        #new_row.append(options["lex"])
-        #print()
-        #return concat(new_row, parse_morph(int(options["morph"])))
+        options = options[0]
+        new_row.append(options["w"])
+        new_row.append(options["lex"])
+        new_row = concat(new_row, decode_morph_tag(int(options["morph"])))
     return new_row
 
 def add_data_to_sheet(data, sheet):
