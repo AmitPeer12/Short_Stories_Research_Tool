@@ -17,5 +17,6 @@
 
 The tool uses the aforementioned APIs to perform statistical and morphological analysis for texts in the hebrew language.
 The user will be presented with an easy to navigate menu that will guide him through the tool.
+The tool is supported on both linux and windows os.
 
 This code was written by Amit Peer & Ofir Kapustian
