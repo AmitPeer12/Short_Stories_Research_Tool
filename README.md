@@ -1,9 +1,9 @@
 # short_stories_research_tool
 
-## Research tool for statistical and morphological analysis of short stories in hebrew
+### Research tool for statistical and morphological analysis of short stories in hebrew
 
 ## Prerequisites:
-| **** | **Prerequisite** | **How to** |
+|  | **Prerequisite** | **How to** |
 | --- | --- | --- |
 | 1 | python3 | https://www.python.org/downloads/ |
 | 2 | pip | https://pip.pypa.io/en/stable/installation/ |
