@@ -34,6 +34,8 @@ def add_top_to_sheet(sheet):
     sheet["L1"] = "Polarity"
     sheet["M1"] = "Binyan"
     sheet["N1"] = "Suffix"
+    for i in range(14):
+        sheet[f'{chr(ord("A") + i)}1'].font = openpyxl.styles.Font(bold = True, size = '14')
 
 def reorganize_row(row):
     new_row = []
