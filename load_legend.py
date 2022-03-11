@@ -8,6 +8,3 @@ with requests.Session() as s:
     decoded_content = download.content.decode('utf-8')
 
     legend = list(csv.reader(decoded_content.splitlines(), delimiter=','))[1:]
-
-#    for i in range(10):
-#        print(legend[i])

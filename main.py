@@ -1,11 +1,27 @@
+import os, sys, atexit
+
+try:
+    import requests
+except ModuleNotFoundError as e:
+    if input("The 'requests' library isn't installed, to install it, press 'Y', to exit press 'N':\n") == 'Y':
+        os.system("pip install requests")
+        import requests
+    else: sys.exit(1)
+
+try:
+    import openpyxl
+except ModuleNotFoundError as e:
+    if input("The 'openpyxl' library isn't installed, to install it, press 'Y', to exit press 'N':\n") == 'Y':
+        os.system("pip install openpyxl")
+        import openpyxl
+    else: sys.exit(1)
+
 from load_legend import legend
 from author_stats import collect_author_stories, show_author_stats
 from story_stats import show_story_stats
 from morph_analysis import analyse_morph, show_analysis
 from persistance_layer import repo, Stories, Authors
 from pathlib import Path
-import requests
-import os, sys, atexit
 
 API_KEY = '84668444eaa4feb6ac59b3522a264275f539f9d6d58dec127a48948c1e8b833c'
 
@@ -13,11 +29,12 @@ STORIES_DIR = Path(__file__).parent / "Stories"
 PDF_DIR = STORIES_DIR / "pdf"
 TXT_DIR = STORIES_DIR / "txt"
 HTML_DIR = STORIES_DIR / "html"
+JSON_DIR = STORIES_DIR / "json"
 MORPH_DIR = STORIES_DIR / "morph"
 
 FILE_TYPES = {1: 'TXT', 2: 'HTML', 3: 'PDF'}
 TYPE_FOLDER = {'txt': TXT_DIR, 'html': HTML_DIR, 'pdf': PDF_DIR}
-MAIN_MENU = {1: 'Add stories', 2: 'View stats for a single story', 3: 'View stats for all the works of one author', 4: 'View Morphological Analysis for a single story', 5: 'Exit'}
+MAIN_MENU = {1: 'Add a single story', 2: 'View stats for a single story', 3: 'View stats for all the works of one author', 4: 'View Morphological Analysis for a single story', 5: 'Exit'}
 
 def get_menu_option(menu):
     # Print the menu
@@ -37,14 +54,24 @@ def get_menu_option(menu):
 def find_story_id():
     
     while True:
-        name = input('Please enter a story name to load: (or -1 to exit) ')
+        name = input('Please enter a story name or story ID to load: (or -1 to exit) ')
         if name == '-1':
             return -1
-        for story in legend:
-            if story[2] == name:
-                return int(story[0])
-        print('The story name you\'ve enterd doesn\'t exist, Please try a different name.')
-        
+        try:
+            return int(name)
+        except ValueError:
+            for story in legend:
+                if story[2] == name:
+                    return int(story[0])
+            print('The story name you\'ve enterd doesn\'t exist, Please try a different name.')
+
+def validate_file_name(file_name):
+    fixed_file_name = file_name
+    special_chars = '!@#$%^&*()+=<>?/~`:;"|[]{}'
+    for char in special_chars:
+        fixed_file_name = fixed_file_name.replace(char, '')
+    return fixed_file_name
+            
 def get_story(file_type, story_id = None):
     try:
 
@@ -70,7 +97,7 @@ def get_story(file_type, story_id = None):
 
         story_url = response.json().get('download_url')
         story_name = response.json().get('metadata').get('title')
-        story_file_path = TYPE_FOLDER.get(file_type) / f"{story_name}.{file_type}"
+        story_file_path = TYPE_FOLDER.get(file_type) / f'{validate_file_name(story_name)}.{file_type}'
         
         if os.path.exists(story_file_path):
             print(f'The story with the I.D {story_id} loaded successfully.')
@@ -103,11 +130,10 @@ def get_story(file_type, story_id = None):
     except requests.RequestException as e:
         print('Some Ambiguous Exception:', e)
 
-def add_stories():
-    while True:
-        print('\nAdd a story to your local Database:\n')
-        if not get_story(FILE_TYPES[get_menu_option(FILE_TYPES)].lower()):
-            return
+def add_story():
+    print('\nAdd a story to your local Database:\n')
+    if not get_story(FILE_TYPES[get_menu_option(FILE_TYPES)].lower()):
+        return
 
 def story_stats():
     print('\nView the statistics of a single story:\n')
@@ -148,16 +174,27 @@ def morphological_analysis():
     print('\nView the morphological analysis for a single story:\n')
     if not(story := get_story('txt')):
         return
-    file_path = MORPH_DIR / f'{story.story_name}.json'
-    if not os.path.exists(file_path):
-        analyse_morph(story, file_path)
+    
+    story_name = validate_file_name(story.story_name)
 
-    show_analysis(file_path)
+    json_file_path = JSON_DIR / f'{story_name}.json'
+    if os.path.exists(json_file_path):
+        print(f'The story with the I.D {story.id} already has a json file at {json_file_path}.')
+    else: 
+        analyse_morph(story, json_file_path)
+    print(f'The story with the I.D {story.id} computed a json file successfully.')
+
+    morph_file_path = MORPH_DIR / f'{story_name}.xlsx'
+    if os.path.exists(morph_file_path):
+        print(f'The story with the I.D {story.id} already has a morphological analysis file at {morph_file_path}.')
+    else: 
+        show_analysis(story_name, json_file_path, morph_file_path)
+        print(f'The story with the I.D {story.id} computed a morphological analysis file successfully.')
 
 def exit():
     sys.exit()
     
-MAIN_MENU_FUNCS = {1: add_stories, 2: story_stats, 3: author_stats, 4: morphological_analysis, 5: exit}
+MAIN_MENU_FUNCS = {1: add_story, 2: story_stats, 3: author_stats, 4: morphological_analysis, 5: exit}
 
 def main():
     if not os.path.exists(STORIES_DIR):
@@ -168,6 +205,8 @@ def main():
         os.mkdir(TXT_DIR)    
     if not os.path.exists(HTML_DIR):
         os.mkdir(HTML_DIR)
+    if not os.path.exists(JSON_DIR):
+        os.mkdir(JSON_DIR)
     if not os.path.exists(MORPH_DIR):
         os.mkdir(MORPH_DIR)
     

@@ -5,7 +5,8 @@ def extract_stats(file_path):
     with open(file_path, 'r', encoding='utf-8')  as story_file:
         word_list = {}
         content = story_file.read()
-        chars_to_remove = ['\n', '\r', '\t', '\'', '\"', '?', '<', '>', '!', '.', ',', '–', '-', '`']
+        content = content[:-111]
+        chars_to_remove = ['\n', '\r', '\t', '\'', '\"', '?', '<', '>', '!', '.', ',', '–', '-', '`', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '?', '/', '~', ':', ';', '[', ']', '{', '}']
         for char in chars_to_remove:
             content = content.replace(char, '')
         content = content.split()
@@ -14,7 +15,6 @@ def extract_stats(file_path):
         
         word_list["all"] = len(content)
         return dict(sorted(word_list.items(), key=lambda item: item[1], reverse=True))
-        
 
 def show_story_stats(story):
 
